@@ -4,29 +4,29 @@ import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 
-import java.time.Duration;
 import java.time.Instant;
 
-public class PoissonSampler extends  Thread {
+public class LinearWorkload extends Thread {
 
-    int lamda;
+    double tangent;
     int delay;
-    PoissonDistribution poissonDistribution;
-
-   private double[][] regressor;
-
-   private RLS rls;
+    int regressorOrder;
 
 
-    PoissonSampler(int lamda, int delay){
+    private double[][] regressor;
 
-        this.lamda =lamda;
-        poissonDistribution = new PoissonDistribution(lamda);
+    private RLS rls;
+
+
+    LinearWorkload(double tangent, int delay, int regressorOrder){
+
+        this.tangent =tangent;
         this.delay = delay;
+        this.regressorOrder = regressorOrder;
 
-         rls = new RLS(3, 0.99);
+        rls = new RLS(regressorOrder, 0.99);
 
-        regressor = new double[1][rls.getNum_vars()];
+        regressor = new double[1][this.regressorOrder];
 
         for (int i=0; i<rls.getNum_vars(); i++)
             regressor[0][i] =0;
@@ -34,30 +34,27 @@ public class PoissonSampler extends  Thread {
     }
 
 
-    int sample() {
-        return poissonDistribution.sample();
+    double sample(int second) {
+        if(second <120)
+        return 2.083 * second;
+        else
+            return 2.083 *120;
     }
 
-    void changeMean(int lamda) {
 
-        this.lamda =lamda;
-
-        poissonDistribution = new PoissonDistribution(lamda);
-
-    }
 
 
     @Override
     public void run() {
 
-        int s;
+        double s;
 
         Instant start = Instant.now();
         double  predictedSample;
         RealMatrix mregressor;
 
 
-
+         int seconds = 0;
         while (true) {
 
 
@@ -68,11 +65,11 @@ public class PoissonSampler extends  Thread {
 
             predictedSample = (this.rls.w.transpose().multiply(mregressor.transpose())).getEntry(0,0);
 
-            System.out.println(" Estimated poisson workload sample is: " +  predictedSample);
+            System.out.println(" Estimated Linear Sample is: " +  predictedSample);
 
-            s =  sample();
+            s =  sample(seconds);
 
-            System.out.println(" Poisson mean:" + lamda + "  sampled :" + s);
+            System.out.println(" Linear tangent:" + tangent + "  sampled :" + s + "  seconds elpased :" + seconds);
             System.out.println(" sleeping for: " + delay);
 
             rls.add_obs(mregressor.transpose(), s);
@@ -80,10 +77,10 @@ public class PoissonSampler extends  Thread {
 
 
 
-            for (int i=0; i<rls.getNum_vars() -1; i++)
+            for (int i=0; i<regressorOrder -1; i++)
                 regressor[0][i] =  regressor[0][i+1];
 
-            regressor[0][rls.getNum_vars()-1] = s;
+            regressor[0][regressorOrder-1] = s;
 
          /*   Instant now = Instant.now();
             long elapsedTime = Duration.between(start, now).toMinutes();
@@ -99,11 +96,21 @@ public class PoissonSampler extends  Thread {
                 e.printStackTrace();
             }
 
+            seconds++;
+
+
+
+
         }
     }
 
     private void printRegressor(){
-        for (int i=0; i<rls.getNum_vars() ; i++)
-           System.out.println( "regressor[0]["+ i + "] = " + regressor[0][i]);
+        for (int i=0; i<this.regressorOrder ; i++)
+            System.out.println( "regressor[0]["+ i + "] = " + regressor[0][i]);
     }
+
+
+
+
+
 }

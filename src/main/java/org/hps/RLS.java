@@ -28,9 +28,7 @@ public class RLS {
 
     public RealMatrix w;
 
-    private RealMatrix aRealMatrix;
-    RealMatrix bRealMatrix;
-    RealMatrix cRealMatrix;
+
     private double a_priori_error;
 
     RLS(int num_vars, double lamda){
