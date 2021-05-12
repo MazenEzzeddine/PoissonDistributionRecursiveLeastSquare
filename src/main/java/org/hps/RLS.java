@@ -51,7 +51,7 @@ public class RLS {
 
 
     public void add_obs(RealMatrix X, double t){
-        RealMatrix kn, Pn,k, xt,kd1, Pnn;
+        RealMatrix kn, Pn,k, Pnn;
         double kd, Pd;
        kn = P.multiply(X);
 
